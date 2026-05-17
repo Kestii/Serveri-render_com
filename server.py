@@ -49,7 +49,8 @@ def update_phone_info():
     
     phone_infos[laite_id] = {
         "id": laite_id,
-        
+        "name": data.get('name', ''),
+                
         # List<AppUsage>
         "dailyUsage": [
             {
