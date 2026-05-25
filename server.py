@@ -110,5 +110,50 @@ def get_phone_info_yksi(laite_id):
         return jsonify({"virhe": "laitetta ei löydy"}), 404
     return jsonify(phone_infos[laite_id])
 
+
+all_messages = []
+# Pidetään kirjaa varatuista nimistä
+registered_users = set()
+
+@app.route('/check-username', methods=['GET'])
+def check_username():
+    username = request.args.get('username')
+    if not username:
+        return jsonify(False)
+    # Palauttaa True, jos nimi ei ole vielä käytössä
+    return jsonify(username.lower() not in registered_users)
+
+@app.route('/messages', methods=['POST'])
+def send_message():
+    data = request.json
+    if not data:
+        return jsonify({"error": "Data puuttuu"}), 400
+    
+    # Kun joku lähettää viestin, varataan hänen nimensä järjestelmään
+    if data.get('senderName'):
+        registered_users.add(data.get('senderName').lower())
+
+    # Tallennetaan koko viesti (sisältää senderName, recipientName, message jne.)
+    all_messages.append(data)
+    print(f"Viesti lähetetty: {data.get('senderName')} -> {data.get('recipientName')}")
+    return jsonify({"ok": True}), 200
+
+@app.route('/messages', methods=['GET'])
+def get_messages():
+    # Puhelin kysyy viestejä omalla nimellään
+    my_name = request.args.get('username')
+    
+    if not my_name:
+        return jsonify([])
+
+    # Palautetaan vain ne viestit, joissa tämä käyttäjä on vastaanottajana
+    # JA jotka on lähetetty tähän tiettyyn keskusteluun (valinnainen lisäys)
+    my_messages = [m for m in all_messages if m.get('recipientName') == my_name]
+    
+    return jsonify(my_messages)
+
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
