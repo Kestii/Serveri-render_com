@@ -146,10 +146,23 @@ def get_messages():
     if not my_name:
         return jsonify([])
 
-    # Palautetaan vain ne viestit, joissa tämä käyttäjä on vastaanottajana
-    # JA jotka on lähetetty tähän tiettyyn keskusteluun (valinnainen lisäys)
-    my_messages = [m for m in all_messages if m.get('recipientName') == my_name]
-    
+    my_name_lower = my_name.lower()
+    my_messages = []
+
+    for m in all_messages:
+        # 1. Tarkistetaan onko kyseessä suora yksityisviesti
+        recipient = m.get('recipientName')
+        if recipient and recipient.lower() == my_name_lower:
+            my_messages.append(m)
+            continue # Viesti lisätty, siirrytään seuraavaan
+            
+        # 2. Tarkistetaan onko kyseessä ryhmäviesti (oma nimi löytyy listalta)
+        recipients_list = m.get('recipientsNames')
+        if recipients_list and isinstance(recipients_list, list):
+            # any() tarkistaa löytyykö listalta yhtään nimeä, joka täsmää
+            if any(name.lower() == my_name_lower for name in recipients_list):
+                my_messages.append(m)
+
     return jsonify(my_messages)
 
 
